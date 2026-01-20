@@ -35,11 +35,11 @@ def seed():
 
         items = [
             Items(name="Broad Sword", types="Weapon", quantity=1, img=""),
-            Items(name="Bronze Axe", types="Weapon", quantity=1, img=""),
+            Items(name="Bronze Helmet", types="Weapon", quantity=1, img=""),
+            Items(name="Bronze Armor", types="Armor", quantity=1, img=""),
             Items(name="Healing Potion(S)",
                   types="Consumables", quantity=5, img=""),
             Items(name="Mana Potion(S)", types="Consumables", quantity=5, img=""),
-            Items(name="Bronze Armor", types="Armor", quantity=1, img=""),
         ]
 
         session.add_all(items)
