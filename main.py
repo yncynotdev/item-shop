@@ -3,8 +3,6 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile
 from sqlmodel import Session, Field, SQLModel, create_engine, select
 
-import os
-
 
 class Items(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -99,10 +97,8 @@ def insert_item(items: Items, session: SessionDep, file: UploadFile) -> Items:
 
 
 @app.post("/items/upload_file/")
-async def insert_upload_file(file: UploadFile):
-    extension = os.path.splitext(file.filename)[1].lower()
-
-    if extension not in '.png':
+async def insert_upload_image(file: UploadFile):
+    if file.content_type not in 'image/png':
         raise HTTPException(status_code=400, detail="file unsupported format")
 
     return {"file_name": file.filename}
