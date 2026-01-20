@@ -1,7 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile
 from sqlmodel import Session, Field, SQLModel, create_engine, select
+
+import os
 
 
 class Items(SQLModel, table=True):
@@ -89,11 +91,21 @@ def get_item_by_name(name: str, session: SessionDep) -> list[Items]:
 
 
 @app.post("/items/")
-def insert_item(items: Items, session: SessionDep) -> Items:
+def insert_item(items: Items, session: SessionDep, file: UploadFile) -> Items:
     session.add(items)
     session.commit()
     session.refresh(items)
     return items
+
+
+@app.post("/items/upload_file/")
+async def insert_upload_file(file: UploadFile):
+    extension = os.path.splitext(file.filename)[1].lower()
+
+    if extension not in '.png':
+        raise HTTPException(status_code=400, detail="file unsupported format")
+
+    return {"file_name": file.filename}
 
 
 @app.delete("/items/{item_id}")
