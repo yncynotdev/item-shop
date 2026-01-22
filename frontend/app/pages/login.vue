@@ -4,6 +4,8 @@ import type { FormSubmitEvent, AuthFormField } from "@nuxt/ui";
 
 const toast = useToast();
 
+const session = authClient.useSession();
+
 const fields: AuthFormField[] = [
   {
     name: "email",
@@ -26,14 +28,14 @@ const providers = [
     label: "Google",
     icon: "i-simple-icons-google",
     onClick: () => {
-      toast.add({ title: "Google", description: "Login with Google" });
+      signInWithGoogle();
     },
   },
   {
     label: "GitHub",
     icon: "i-simple-icons-github",
     onClick: () => {
-      toast.add({ title: "GitHub", description: "Login with GitHub" });
+      signInWithGitHub();
     },
   },
 ];
@@ -53,7 +55,6 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
     description: `${payload}`,
     color: "success",
   });
-  console.log("Submitted", payload);
 }
 </script>
 
@@ -69,5 +70,6 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       />
     </UPageCard>
+    <UButton v-if="session.data" label="Logout" @click="signOut" />
   </div>
 </template>
