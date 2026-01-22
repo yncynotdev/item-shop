@@ -4,11 +4,16 @@ import type { FormSubmitEvent, AuthFormField } from "@nuxt/ui";
 
 const toast = useToast();
 
-const session = authClient.useSession();
-
 const isLoading = ref<boolean>(false);
 
 const fields: AuthFormField[] = [
+  {
+    name: "username",
+    type: "text",
+    label: "Username",
+    placeholder: "Enter your username",
+    required: true,
+  },
   {
     name: "email",
     type: "email",
@@ -43,6 +48,7 @@ const providers = [
 ];
 
 const schema = z.object({
+  username: z.string("Username is required").max(50),
   email: z.email("Invalid email"),
   password: z
     .string("Password is required")
@@ -52,10 +58,11 @@ const schema = z.object({
 type Schema = z.output<typeof schema>;
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  await authClient.signIn.email(
+  await authClient.signUp.email(
     {
       email: payload.data.email,
       password: payload.data.password,
+      name: payload.data.username,
     },
     {
       onRequest: (_ctx) => {
@@ -64,7 +71,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       onSuccess: async (_ctx) => {
         toast.add({
           title: "Success",
-          description: "User login successfully",
+          description: "User Created",
           color: "success",
         });
 
@@ -86,15 +93,14 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   <div class="flex flex-col items-center justify-center gap-4 p-4">
     <UPageCard class="w-full max-w-md">
       <UAuthForm
-:schema="schema" title="Login" description="Enter your credentials to access your account."
-        :fields="fields" :providers="providers" @submit="onSubmit">
+:schema="schema" title="Sign-In" description="Enter all the required fields to create account"
+        :fields="fields" :providers="providers" :submit="{
+          loading: isLoading,
+        }" @submit="onSubmit">
         <template #footer>
-          <span>Don't have account?
-            <NuxtLink to="/sign-up">Sign up here</NuxtLink>
-          </span>
+          <span>Have an account? <NuxtLink to="/login">Login here</NuxtLink></span>
         </template>
       </UAuthForm>
     </UPageCard>
-    <UButton v-if="session.data" label="Logout" @click="signOut" />
   </div>
 </template>
