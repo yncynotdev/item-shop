@@ -31,14 +31,14 @@ const providers = [
   {
     label: "Google",
     icon: "i-simple-icons-google",
-    onClick: () => {
+    onClick: async() => {
       signInWithGoogle();
     },
   },
   {
     label: "GitHub",
     icon: "i-simple-icons-github",
-    onClick: () => {
+    onClick: async() => {
       signInWithGitHub();
     },
   },
@@ -64,12 +64,6 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         isLoading.value = true;
       },
       onSuccess: async (_ctx) => {
-        toast.add({
-          title: "Success",
-          description: "User login successfully",
-          color: "success",
-        });
-
         await request()
       },
       onError: (ctx) => {
@@ -95,8 +89,6 @@ async function request() {
   if (data) {
     const token = data.token
 
-    console.log("JWT Token:", token)
-
     await $fetch(
       `${config.public.fastApiUrl}${"/api/auth/verify"}`,
       {
@@ -107,7 +99,6 @@ async function request() {
       },
     );
   }
-
 }
 </script>
 
@@ -129,11 +120,15 @@ async function request() {
         </template>
       </UAuthForm>
     </UPageCard>
+
     <div>
       <UButton v-if="session.data" label="Logout" @click="signOut" />
     </div>
     <div>
       <UButton label="Request" @click="request" />
+    </div>
+    <div>
+      <UButton label="Protected Route" to="/protected" />
     </div>
   </div>
 </template>
