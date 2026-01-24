@@ -1,23 +1,21 @@
 import { createAuthClient } from "better-auth/vue";
+import { jwtClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
   baseURL: process.env.BETTER_AUTH_URL,
+  plugins: [jwtClient()],
 });
 
 export async function signInWithGitHub() {
-  const data = await authClient.signIn.social({
+  await authClient.signIn.social({
     provider: "github",
   });
-
-  return data;
 }
 
 export async function signInWithGoogle() {
-  const data = await authClient.signIn.social({
+  await authClient.signIn.social({
     provider: "google",
   });
-
-  return data;
 }
 
 export async function signOut() {

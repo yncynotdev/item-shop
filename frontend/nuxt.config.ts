@@ -11,4 +11,10 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+
+  runtimeConfig: {
+    public: {
+      fastApiUrl: process.env.FAST_API_URL,
+    },
+  },
 });

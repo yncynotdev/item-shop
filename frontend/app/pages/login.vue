@@ -2,6 +2,8 @@
 import * as z from "zod";
 import type { FormSubmitEvent, AuthFormField } from "@nuxt/ui";
 
+const config = useRuntimeConfig()
+
 const toast = useToast();
 
 const session = authClient.useSession();
@@ -68,7 +70,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
           color: "success",
         });
 
-        await navigateTo("/");
+        await request()
       },
       onError: (ctx) => {
         toast.add({
@@ -80,14 +82,46 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     },
   );
 }
+
+async function request() {
+  const { data, error } = await authClient.token()
+  if (error) throw error
+
+  if (!data.token) {
+    console.warn("No token found")
+    return
+  }
+
+  if (data) {
+    const token = data.token
+
+    console.log("JWT Token:", token)
+
+    await $fetch(
+      `${config.public.fastApiUrl}${"/api/auth/verify"}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+  }
+
+}
 </script>
 
 <template>
   <div class="flex flex-col items-center justify-center gap-4 p-4">
     <UPageCard class="w-full max-w-md">
-      <UAuthForm
-:schema="schema" title="Login" description="Enter your credentials to access your account."
-        :fields="fields" :providers="providers" @submit="onSubmit">
+      <UAuthForm 
+        :schema="schema"
+        title="Login"
+        description="Enter your credentials to access your account."
+        :fields="fields"
+        :providers="providers"
+        @submit="onSubmit"
+      >
         <template #footer>
           <span>Don't have account?
             <NuxtLink to="/sign-up">Sign up here</NuxtLink>
@@ -95,6 +129,11 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         </template>
       </UAuthForm>
     </UPageCard>
-    <UButton v-if="session.data" label="Logout" @click="signOut" />
+    <div>
+      <UButton v-if="session.data" label="Logout" @click="signOut" />
+    </div>
+    <div>
+      <UButton label="Request" @click="request" />
+    </div>
   </div>
 </template>
