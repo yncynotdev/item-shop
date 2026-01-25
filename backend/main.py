@@ -198,7 +198,6 @@ def verify_auth(
             key=signing_key,
             algorithms=[JWT_ALGORITHM],
             audience=[BASE_URL, BASE_HTTP_URL]
-            # options={"verify_aud": False}
         )
 
         user_id = payload.get("sub")
@@ -224,5 +223,5 @@ def verify_auth(
         print(f"DEBUG ERROR: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}"
+            detail="Internal server error"
         )
