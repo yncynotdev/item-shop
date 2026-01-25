@@ -10,8 +10,6 @@ const config = useRuntimeConfig();
 
 const toast = useToast();
 
-const session = authClient.useSession();
-
 const isLoading = ref<boolean>(false);
 
 const fields: AuthFormField[] = [
@@ -107,17 +105,29 @@ async function request() {
   <div class="flex flex-col items-center justify-center gap-4 p-4">
     <UPageCard class="w-full max-w-md">
       <UAuthForm
-:schema="schema" title="Login" description="Enter your credentials to access your account."
-        :fields="fields" :providers="providers" @submit="onSubmit">
+        :schema="schema"
+        title="Login"
+        description="Enter your credentials to access your account."
+        :fields="fields"
+        :providers="providers"
+        @submit="onSubmit"
+      >
         <template #footer>
-          <span>Don't have account?
-            <NuxtLink to="/sign-up">Sign up here</NuxtLink>
-          </span>
+          <div class="flex flex-col gap-5">
+            <UButton 
+              label="Go Back"
+              color="neutral"
+              variant="outline"
+              to="/"
+              class="flex flex-col justify-center"
+            />
+
+            <span>Don't have account?
+              <NuxtLink to="/sign-up">Sign up here</NuxtLink>
+            </span>
+          </div>
         </template>
       </UAuthForm>
     </UPageCard>
-
-    <UButton v-if="session.data" label="Logout" @click="signOut" />
-    <UButton label="Protected Route" to="/protected" />
   </div>
 </template>

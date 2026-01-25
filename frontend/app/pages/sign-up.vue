@@ -2,6 +2,10 @@
 import * as z from "zod";
 import type { FormSubmitEvent, AuthFormField } from "@nuxt/ui";
 
+definePageMeta({
+  layout: "login",
+});
+
 const toast = useToast();
 
 const isLoading = ref<boolean>(false);
@@ -93,12 +97,27 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   <div class="flex flex-col items-center justify-center gap-4 p-4">
     <UPageCard class="w-full max-w-md">
       <UAuthForm
-:schema="schema" title="Sign-In" description="Enter all the required fields to create account"
-        :fields="fields" :providers="providers" :submit="{
+        :schema="schema"
+        title="Sign-In"
+        description="Enter all the required fields to create account"
+        :fields="fields" 
+        :providers="providers"
+        :submit="{
           loading: isLoading,
-        }" @submit="onSubmit">
+        }"
+        @submit="onSubmit"
+      >
         <template #footer>
-          <span>Have an account? <NuxtLink to="/login">Login here</NuxtLink></span>
+          <div class="flex flex-col gap-5">
+            <UButton 
+              label="Go Back"
+              color="neutral"
+              variant="outline"
+              to="/"
+              class="flex flex-col justify-center"
+            />
+            <span>Have an account? <NuxtLink to="/login">Login here</NuxtLink></span>
+          </div>
         </template>
       </UAuthForm>
     </UPageCard>
