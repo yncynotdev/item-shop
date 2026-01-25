@@ -5,9 +5,9 @@ const props = defineProps<Items>();
 </script>
 
 <template>
-  <div>
+  <UCard>
     <h2>{{props.name}}</h2>
     <p>{{props.types}}</p>
     <p>{{props.quantity}}</p>
-  </div>
+  </UCard>
 </template>

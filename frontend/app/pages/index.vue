@@ -19,7 +19,6 @@ onMounted(async () => {
 
 <template>
   <div>
-    <UButton label="Login" to="/login" />
     <ItemsList :items="items" />
   </div>
 </template>

@@ -11,7 +11,7 @@ const props = defineProps<{ items: Items[] | null }>();
 </script>
 
 <template>
-  <ul>
+  <ul class="flex flex-row gap-5 flex-wrap">
     <li v-for="(item, index) in props.items" :key="index">
       <ItemsCard :name="item.name" :types="item.types" :quantity="item.quantity" />
     </li>
