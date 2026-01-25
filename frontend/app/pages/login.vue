@@ -3,10 +3,10 @@ import * as z from "zod";
 import type { FormSubmitEvent, AuthFormField } from "@nuxt/ui";
 
 definePageMeta({
-  layout: 'login'
-})
+  layout: "login",
+});
 
-const config = useRuntimeConfig()
+const config = useRuntimeConfig();
 
 const toast = useToast();
 
@@ -35,14 +35,14 @@ const providers = [
   {
     label: "Google",
     icon: "i-simple-icons-google",
-    onClick: async() => {
+    onClick: async () => {
       signInWithGoogle();
     },
   },
   {
     label: "GitHub",
     icon: "i-simple-icons-github",
-    onClick: async() => {
+    onClick: async () => {
       signInWithGitHub();
     },
   },
@@ -68,7 +68,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         isLoading.value = true;
       },
       onSuccess: async (_ctx) => {
-        await request()
+        await request();
       },
       onError: (ctx) => {
         toast.add({
@@ -82,26 +82,23 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 }
 
 async function request() {
-  const { data, error } = await authClient.token()
-  if (error) throw error
+  const { data, error } = await authClient.token();
+  if (error) throw error;
 
   if (!data.token) {
-    console.warn("No token found")
-    return
+    console.warn("No token found");
+    return;
   }
 
   if (data) {
-    const token = data.token
+    const token = data.token;
 
-    await $fetch(
-      `${config.public.fastApiUrl}${"/api/auth/verify"}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    await $fetch(`${config.public.fastApiUrl}${"/api/auth/verify"}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
   }
 }
 </script>
@@ -109,14 +106,9 @@ async function request() {
 <template>
   <div class="flex flex-col items-center justify-center gap-4 p-4">
     <UPageCard class="w-full max-w-md">
-      <UAuthForm 
-        :schema="schema"
-        title="Login"
-        description="Enter your credentials to access your account."
-        :fields="fields"
-        :providers="providers"
-        @submit="onSubmit"
-      >
+      <UAuthForm
+:schema="schema" title="Login" description="Enter your credentials to access your account."
+        :fields="fields" :providers="providers" @submit="onSubmit">
         <template #footer>
           <span>Don't have account?
             <NuxtLink to="/sign-up">Sign up here</NuxtLink>
@@ -125,14 +117,7 @@ async function request() {
       </UAuthForm>
     </UPageCard>
 
-    <div>
-      <UButton v-if="session.data" label="Logout" @click="signOut" />
-    </div>
-    <div>
-      <UButton label="Request" @click="request" />
-    </div>
-    <div>
-      <UButton label="Protected Route" to="/protected" />
-    </div>
+    <UButton v-if="session.data" label="Logout" @click="signOut" />
+    <UButton label="Protected Route" to="/protected" />
   </div>
 </template>
