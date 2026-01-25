@@ -196,8 +196,8 @@ def verify_auth(
         payload = jwt.decode(
             jwt=token,
             key=signing_key,
-            algorithms=["EdDSA"],
-            audience=["http://localhost:3000", "http://127.0.0.1:3000"]
+            algorithms=[JWT_ALGORITHM],
+            audience=[BASE_URL, BASE_HTTP_URL]
             # options={"verify_aud": False}
         )
 
