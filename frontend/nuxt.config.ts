@@ -17,4 +17,11 @@ export default defineNuxtConfig({
       fastApiUrl: process.env.FAST_API_URL,
     },
   },
+
+  components: [
+    {
+      path: "~/components",
+      pathPrefix: false,
+    },
+  ],
 });
