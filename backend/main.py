@@ -9,8 +9,7 @@ import jwt
 import os
 
 
-BASE_URL = os.getenv("BETTER_AUTH_URL")
-BASE_HTTP_URL = os.getenv("BETTER_AUTH_HTTP_URL")
+BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
 DB_PATH = os.getenv("DB_PATH")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWKS_URL = os.getenv("JWKS_URL")
@@ -33,16 +32,10 @@ class Users(SQLModel, table=True):
 
 
 def check_env():
-    if BASE_URL is None:
+    if BETTER_AUTH_URL is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BASE_URL is missing"
-        )
-
-    if BASE_HTTP_URL is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BASE_HTTP_URL is missing"
+            detail="BETTER_AUTH_URL is missing"
         )
 
     if JWT_ALGORITHM is None:
@@ -101,8 +94,7 @@ app = FastAPI()
 
 
 origins = [
-    BASE_URL,
-    BASE_HTTP_URL
+    BETTER_AUTH_URL,
 ]
 
 
@@ -185,7 +177,7 @@ def delete_item_by_id(item_id: int, session: SessionDep) -> Items:
 def verify_auth(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())
 ):
-    jwk_url = f"{BASE_URL}/{JWKS_URL}"
+    jwk_url = f"{BETTER_AUTH_URL}/{JWKS_URL}"
 
     token = credentials.credentials
     jwk = jwt.PyJWKClient(jwk_url)
@@ -197,7 +189,7 @@ def verify_auth(
             jwt=token,
             key=signing_key,
             algorithms=[JWT_ALGORITHM],
-            audience=[BASE_URL, BASE_HTTP_URL]
+            audience=[BETTER_AUTH_URL]
         )
 
         user_id = payload.get("sub")
