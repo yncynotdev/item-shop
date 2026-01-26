@@ -7,12 +7,19 @@ from dotenv import load_dotenv
 
 import jwt
 import os
+import boto3
 
 
 BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
+
 DB_PATH = os.getenv("DB_PATH")
+
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWKS_URL = os.getenv("JWKS_URL")
+
+BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
+BUCKET_ACCESS_KEY_ID = os.getenv("BUCKET_ACCESS_KEY_ID")
+BUCKET_SECRET_ACCESS_KEY = os.getenv("BUCKET_SECRET_ACCESS_KEY")
 
 load_dotenv()
 
@@ -61,6 +68,13 @@ db_url = f"sqlite:///{DB_PATH}"
 
 connect_args = {"check_same_thread": False}
 engine = create_engine(db_url, connect_args=connect_args)
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url=BUCKET_ENDPOINT_URL,
+    aws_access_key_id=BUCKET_ACCESS_KEY_ID,
+    aws_secret_access_key=BUCKET_SECRET_ACCESS_KEY
+)
 
 
 def get_session():
