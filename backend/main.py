@@ -3,12 +3,13 @@ from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, Field, SQLModel, create_engine, select
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 import jwt
 import os
 import boto3
-
+import logging
 
 BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
 
@@ -17,6 +18,7 @@ DB_PATH = os.getenv("DB_PATH")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWKS_URL = os.getenv("JWKS_URL")
 
+BUCKET_NAME = os.getenv("BUCKET_NAME")
 BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
 BUCKET_ACCESS_KEY_ID = os.getenv("BUCKET_ACCESS_KEY_ID")
 BUCKET_SECRET_ACCESS_KEY = os.getenv("BUCKET_SECRET_ACCESS_KEY")
@@ -63,6 +65,22 @@ def check_env():
             detail="DB_PATH is missing"
         )
 
+    if BUCKET_ENDPOINT_URL is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="BUCKET_ENDPOINT_URL is missing"
+        )
+    if BUCKET_ACCESS_KEY_ID is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="BUCKET_ACCESS_KEY_ID is missing"
+        )
+    if BUCKET_SECRET_ACCESS_KEY is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="BUCKET_SECRET_ACCESS_KEY is missing"
+        )
+
 
 db_url = f"sqlite:///{DB_PATH}"
 
@@ -73,7 +91,8 @@ s3 = boto3.client(
     "s3",
     endpoint_url=BUCKET_ENDPOINT_URL,
     aws_access_key_id=BUCKET_ACCESS_KEY_ID,
-    aws_secret_access_key=BUCKET_SECRET_ACCESS_KEY
+    aws_secret_access_key=BUCKET_SECRET_ACCESS_KEY,
+    region_name="auto",
 )
 
 
@@ -173,6 +192,17 @@ def insert_item(items: Items, session: SessionDep, file: UploadFile) -> Items:
 async def insert_upload_image(file: UploadFile):
     if file.content_type not in 'image/png':
         raise HTTPException(status_code=400, detail="file unsupported format")
+
+    temp_file_path = f"/tmp/{file.filename}"
+    with open(temp_file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    try:
+        s3.upload_file(temp_file_path, BUCKET_NAME, file.filename)
+    except ClientError as e:
+        logging.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="can't upload files into cloud storage")
 
     return {"file_name": file.filename}
 
