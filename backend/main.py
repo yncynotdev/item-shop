@@ -10,6 +10,7 @@ import jwt
 import os
 import boto3
 import logging
+import uuid
 
 BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
 
@@ -19,6 +20,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWKS_URL = os.getenv("JWKS_URL")
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
+BUCKET_IMAGE_URL = os.getenv("BUCKET_IMAGE_URL")
 BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
 BUCKET_ACCESS_KEY_ID = os.getenv("BUCKET_ACCESS_KEY_ID")
 BUCKET_SECRET_ACCESS_KEY = os.getenv("BUCKET_SECRET_ACCESS_KEY")
@@ -31,7 +33,13 @@ class Items(SQLModel, table=True):
     name: str | None = Field(index=True)
     types: str | None = Field(index=True)
     quantity: int | None = Field(default=None, index=True)
-    img: str | None
+    image_id: str | None
+
+
+class Image(SQLModel, table=True):
+    id: str | None = Field(default=None, primary_key=True)
+    index_id: int | None = Field(index=True)
+    url: str | None = Field(index=True)
 
 
 class Users(SQLModel, table=True):
@@ -106,19 +114,44 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 def seed():
     with Session(engine) as session:
-        exists = session.exec(select(Items)).first()
-        if exists:
+        items_exists = session.exec(select(Items)).first()
+        images_exists = session.exec(select(Image)).first()
+        if items_exists:
+            return
+        if images_exists:
             return
 
-        items = [
-            Items(name="Broad Sword", types="Weapon", quantity=1, img=""),
-            Items(name="Bronze Helmet", types="Weapon", quantity=1, img=""),
-            Items(name="Bronze Armor", types="Armor", quantity=1, img=""),
-            Items(name="Healing Potion(S)",
-                  types="Consumables", quantity=5, img=""),
-            Items(name="Mana Potion(S)", types="Consumables", quantity=5, img=""),
+        images = [
+            Image(id=str(uuid.uuid4()), index_id=1, url=f"{
+                  BUCKET_IMAGE_URL}/bronze_sword.png"),
+            Image(id=str(uuid.uuid4()), index_id=2, url=f"{
+                  BUCKET_IMAGE_URL}/bronze_helmet.png"),
+            Image(id=str(uuid.uuid4()), index_id=3, url=f"{
+                  BUCKET_IMAGE_URL}/bronze_armor.png"),
+            Image(id=str(uuid.uuid4()), index_id=4, url=f"{
+                BUCKET_IMAGE_URL}/healing_potion(s).png"),
+            Image(id=str(uuid.uuid4()), index_id=5, url=f"{
+                  BUCKET_IMAGE_URL}/mana_potion(s).png"),
         ]
 
+        items = [
+            Items(name="Broad Sword", types="Weapon", quantity=1,
+                  image_id=1),
+
+            Items(name="Bronze Helmet", types="Weapon", quantity=1,
+                  image_id=2),
+
+            Items(name="Bronze Armor", types="Armor", quantity=1,
+                  image_id=3),
+
+            Items(name="Healing Potion(S)", types="Consumables", quantity=5,
+                  image_id=4),
+
+            Items(name="Mana Potion(S)", types="Consumables", quantity=5,
+                  image_id=5),
+        ]
+
+        session.add_all(images)
         session.add_all(items)
         session.commit()
 
