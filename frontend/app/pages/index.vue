@@ -13,7 +13,6 @@ onMounted(async () => {
   if (!data) return;
 
   items.value = data;
-  console.log(items.value)
 });
 </script>
 

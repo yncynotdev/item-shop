@@ -4,7 +4,7 @@ export type Items = {
   name: string | null;
   types: string | null;
   quantity: number | null;
-  image: string | null;
+  image_url: string | null;
 };
 
 const props = defineProps<{ items: Items[] | null }>();
@@ -17,7 +17,7 @@ const props = defineProps<{ items: Items[] | null }>();
         :name="item.name"
         :types="item.types"
         :quantity="item.quantity"
-        :image="item.image"
+        :image_url="item.image_url"
       />
     </li>
   </ul>
