@@ -13,7 +13,7 @@ const props = defineProps<Items>();
         :alt="`Image of ${props.name}`"
         class="object-contain pixel"
       >
-      <div>
+      <div class="font-silkscreen">
         <h2>{{ props.name }}</h2>
         <p>{{ props.types }}</p>
         <p>{{ props.quantity }}</p>

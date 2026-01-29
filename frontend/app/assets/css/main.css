@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@theme {
+  --font-silkscreen: "Silkscreen", monospace;
+}
+
 *,
 *::before,
 *::after {
