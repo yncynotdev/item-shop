@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, status
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, Field, SQLModel, create_engine, select
@@ -10,7 +10,6 @@ import jwt
 import os
 import boto3
 import logging
-import uuid
 
 BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
 
@@ -28,18 +27,12 @@ BUCKET_SECRET_ACCESS_KEY = os.getenv("BUCKET_SECRET_ACCESS_KEY")
 load_dotenv()
 
 
-class Items(SQLModel, table=True):
+class Item(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str | None = Field(index=True)
     types: str | None = Field(index=True)
     quantity: int | None = Field(default=None, index=True)
-    image_id: str | None
-
-
-class Image(SQLModel, table=True):
-    id: str | None = Field(default=None, primary_key=True)
-    index_id: int | None = Field(index=True)
-    url: str | None = Field(index=True)
+    image_url: str | None = Field(default=None)
 
 
 class Users(SQLModel, table=True):
@@ -114,44 +107,27 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 def seed():
     with Session(engine) as session:
-        items_exists = session.exec(select(Items)).first()
-        images_exists = session.exec(select(Image)).first()
+        items_exists = session.exec(select(Item)).first()
         if items_exists:
             return
-        if images_exists:
-            return
-
-        images = [
-            Image(id=str(uuid.uuid4()), index_id=1, url=f"{
-                  BUCKET_IMAGE_URL}/bronze_sword.png"),
-            Image(id=str(uuid.uuid4()), index_id=2, url=f"{
-                  BUCKET_IMAGE_URL}/bronze_helmet.png"),
-            Image(id=str(uuid.uuid4()), index_id=3, url=f"{
-                  BUCKET_IMAGE_URL}/bronze_armor.png"),
-            Image(id=str(uuid.uuid4()), index_id=4, url=f"{
-                BUCKET_IMAGE_URL}/healing_potion(s).png"),
-            Image(id=str(uuid.uuid4()), index_id=5, url=f"{
-                  BUCKET_IMAGE_URL}/mana_potion(s).png"),
-        ]
 
         items = [
-            Items(name="Broad Sword", types="Weapon", quantity=1,
-                  image_id=1),
+            Item(name="Broad Sword", types="Weapon", quantity=1,
+                 image_url=f"{BUCKET_IMAGE_URL}/bronze_sword.png"),
 
-            Items(name="Bronze Helmet", types="Weapon", quantity=1,
-                  image_id=2),
+            Item(name="Bronze Helmet", types="Weapon", quantity=1,
+                 image_url=f"{BUCKET_IMAGE_URL}/bronze_helmet.png"),
 
-            Items(name="Bronze Armor", types="Armor", quantity=1,
-                  image_id=3),
+            Item(name="Bronze Armor", types="Armor", quantity=1,
+                 image_url=f"{BUCKET_IMAGE_URL}/bronze_armor.png"),
 
-            Items(name="Healing Potion(S)", types="Consumables", quantity=5,
-                  image_id=4),
+            Item(name="Healing Potion(S)", types="Consumables", quantity=5,
+                 image_url=f"{BUCKET_IMAGE_URL}/healing_potion(s).png"),
 
-            Items(name="Mana Potion(S)", types="Consumables", quantity=5,
-                  image_id=5),
+            Item(name="Mana Potion(S)", types="Consumables", quantity=5,
+                 image_url=f"{BUCKET_IMAGE_URL}/mana_potion(s).png"),
         ]
 
-        session.add_all(images)
         session.add_all(items)
         session.commit()
 
@@ -180,41 +156,37 @@ def on_startup():
 
 
 @app.get("/items")
-def get_items(
-        session: SessionDep,
-        offset: int = 0,
-        limit: Annotated[int, Query(le=100)] = 100
-) -> list[Items]:
-    item = session.exec(select(Items).offset(offset).limit(limit)).all()
+def get_items(session: SessionDep,) -> list[Item]:
+    item = session.exec(select(Item)).all()
     return item
 
 
 @app.get("/items/{item_id}")
-def get_item_by_id(item_id: int, session: SessionDep) -> Items:
-    item = session.get(Items, item_id)
+def get_item_by_id(item_id: int, session: SessionDep) -> Item:
+    item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="item not found")
     return item
 
 
 @app.get("/items/types/{types}")
-def get_item_by_type(types: str, session: SessionDep) -> list[Items]:
-    item = session.exec(select(Items).where(Items.types == types))
+def get_item_by_type(types: str, session: SessionDep) -> list[Item]:
+    item = session.exec(select(Item).where(Item.types == types))
     if not item:
         raise HTTPException(status_code=404, detail="item not found")
     return item
 
 
 @app.get("/items/name/{name}")
-def get_item_by_name(name: str, session: SessionDep) -> list[Items]:
-    item = session.exec(select(Items).where(Items.name == name))
+def get_item_by_name(name: str, session: SessionDep) -> list[Item]:
+    item = session.exec(select(Item).where(Item.name == name))
     if not item:
         raise HTTPException(status_code=404, detail="item not found")
     return item
 
 
 @app.post("/items/")
-def insert_item(items: Items, session: SessionDep, file: UploadFile) -> Items:
+def insert_item(items: Item, session: SessionDep, file: UploadFile) -> Item:
     session.add(items)
     session.commit()
     session.refresh(items)
@@ -241,8 +213,8 @@ async def insert_upload_image(file: UploadFile):
 
 
 @app.delete("/items/{item_id}")
-def delete_item_by_id(item_id: int, session: SessionDep) -> Items:
-    item = session.get(Items, item_id)
+def delete_item_by_id(item_id: int, session: SessionDep) -> Item:
+    item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="item not found")
     session.delete(item)
