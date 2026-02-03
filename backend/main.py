@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, Field, SQLModel, create_engine, select
@@ -186,14 +186,39 @@ def get_item_by_name(name: str, session: SessionDep) -> list[Item]:
 
 
 @app.post("/items/")
-def insert_item(items: Item, session: SessionDep, file: UploadFile) -> Item:
-    session.add(items)
-    session.commit()
-    session.refresh(items)
-    return items
+async def insert_item(
+        session: SessionDep,
+        file: Annotated[UploadFile, File()],
+        name: Annotated[str, Form()],
+        types: Annotated[str, Form()],
+        quantity: Annotated[int, Form()],
+) -> Item:
+    if file.content_type not in 'image/png':
+        raise HTTPException(status_code=400, detail="file unsupported format")
+
+    temp_file_path = f"/tmp/{file.filename}"
+    with open(temp_file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    try:
+        s3.upload_file(temp_file_path, BUCKET_NAME, file.filename)
+        image_url = f"{BUCKET_IMAGE_URL}/{file.filename}"
+        session.add(Item(
+            name=name,
+            types=types,
+            quantity=quantity,
+            image_url=image_url
+        ))
+        session.commit()
+    except ClientError as e:
+        logging.error(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="can't upload files into cloud storage")
+
+    return {"ok": True}
 
 
-@app.post("/items/upload_file/")
+@app.post("/items/upload_image/")
 async def insert_upload_image(file: UploadFile):
     if file.content_type not in 'image/png':
         raise HTTPException(status_code=400, detail="file unsupported format")

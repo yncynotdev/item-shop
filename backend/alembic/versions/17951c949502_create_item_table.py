@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column('name', sa.String, nullable=False),
         sa.Column('types', sa.String, nullable=False),
         sa.Column('quantity', sa.Integer, nullable=False),
-        sa.Column('image_url', sa.String, nullable=False),
+        sa.Column('image_url', sa.String, nullable=True),
     )
 
 
