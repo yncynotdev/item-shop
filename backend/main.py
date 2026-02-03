@@ -1,158 +1,30 @@
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, File, Form, status
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import (Depends, FastAPI, HTTPException,
+                     UploadFile, File, Form, status)
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlmodel import Session, Field, SQLModel, create_engine, select
+from sqlmodel import select
 from botocore.exceptions import ClientError
-from dotenv import load_dotenv
+from database import SessionDep, get_session
+from models.item import Item
 
 import jwt
-import os
-import boto3
 import logging
-
-BETTER_AUTH_URL = os.getenv("BETTER_AUTH_URL")
-
-DB_PATH = os.getenv("DB_PATH")
-
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-JWKS_URL = os.getenv("JWKS_URL")
-
-BUCKET_NAME = os.getenv("BUCKET_NAME")
-BUCKET_IMAGE_URL = os.getenv("BUCKET_IMAGE_URL")
-BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
-BUCKET_ACCESS_KEY_ID = os.getenv("BUCKET_ACCESS_KEY_ID")
-BUCKET_SECRET_ACCESS_KEY = os.getenv("BUCKET_SECRET_ACCESS_KEY")
-
-load_dotenv()
-
-
-class Item(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str | None = Field(index=True)
-    types: str | None = Field(index=True)
-    quantity: int | None = Field(default=None, index=True)
-    image_url: str | None = Field(default=None)
-
-
-class Users(SQLModel, table=True):
-    id: str | None = Field(default=None, primary_key=True)
-    email: str | None = Field(index=True)
-    name: str | None = Field(index=True)
-
-
-def check_env():
-    if BETTER_AUTH_URL is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BETTER_AUTH_URL is missing"
-        )
-
-    if JWT_ALGORITHM is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT_ALGORITHM is missing"
-        )
-
-    if JWKS_URL is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWKS_URL is missing"
-        )
-
-    if DB_PATH is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="DB_PATH is missing"
-        )
-
-    if BUCKET_ENDPOINT_URL is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BUCKET_ENDPOINT_URL is missing"
-        )
-    if BUCKET_ACCESS_KEY_ID is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BUCKET_ACCESS_KEY_ID is missing"
-        )
-    if BUCKET_SECRET_ACCESS_KEY is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="BUCKET_SECRET_ACCESS_KEY is missing"
-        )
-
-
-db_url = f"sqlite:///{DB_PATH}"
-
-connect_args = {"check_same_thread": False}
-engine = create_engine(db_url, connect_args=connect_args)
-
-s3 = boto3.client(
-    "s3",
-    endpoint_url=BUCKET_ENDPOINT_URL,
-    aws_access_key_id=BUCKET_ACCESS_KEY_ID,
-    aws_secret_access_key=BUCKET_SECRET_ACCESS_KEY,
-    region_name="auto",
-)
-
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-
-SessionDep = Annotated[Session, Depends(get_session)]
-
-
-def seed():
-    with Session(engine) as session:
-        items_exists = session.exec(select(Item)).first()
-        if items_exists:
-            return
-
-        items = [
-            Item(name="Broad Sword", types="Weapon", quantity=1,
-                 image_url=f"{BUCKET_IMAGE_URL}/bronze_sword.png"),
-
-            Item(name="Bronze Helmet", types="Weapon", quantity=1,
-                 image_url=f"{BUCKET_IMAGE_URL}/bronze_helmet.png"),
-
-            Item(name="Bronze Armor", types="Armor", quantity=1,
-                 image_url=f"{BUCKET_IMAGE_URL}/bronze_armor.png"),
-
-            Item(name="Healing Potion(S)", types="Consumables", quantity=5,
-                 image_url=f"{BUCKET_IMAGE_URL}/healing_potion(s).png"),
-
-            Item(name="Mana Potion(S)", types="Consumables", quantity=5,
-                 image_url=f"{BUCKET_IMAGE_URL}/mana_potion(s).png"),
-        ]
-
-        session.add_all(items)
-        session.commit()
+import seed
+import config
 
 
 app = FastAPI()
 
 
 origins = [
-    BETTER_AUTH_URL,
+    config.env.BETTER_AUTH_URL,
 ]
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
 
 
 @app.on_event("startup")
 def on_startup():
-    check_env()
-    seed()
+    get_session()
+    seed.seed()
 
 
 @app.get("/items")
@@ -201,8 +73,9 @@ async def insert_item(
         buffer.write(await file.read())
 
     try:
-        s3.upload_file(temp_file_path, BUCKET_NAME, file.filename)
-        image_url = f"{BUCKET_IMAGE_URL}/{file.filename}"
+        config.s3.upload_file(
+            temp_file_path, config.env.BUCKET_NAME, file.filename)
+        image_url = f"{config.env.BUCKET_IMAGE_URL}/{file.filename}"
         session.add(Item(
             name=name,
             types=types,
@@ -228,7 +101,8 @@ async def insert_upload_image(file: UploadFile):
         buffer.write(await file.read())
 
     try:
-        s3.upload_file(temp_file_path, BUCKET_NAME, file.filename)
+        config.s3.upload_file(
+            temp_file_path, config.env.BUCKET_NAME, file.filename)
     except ClientError as e:
         logging.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -251,7 +125,7 @@ def delete_item_by_id(item_id: int, session: SessionDep) -> Item:
 def verify_auth(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())
 ):
-    jwk_url = f"{BETTER_AUTH_URL}/{JWKS_URL}"
+    jwk_url = f"{config.env.BETTER_AUTH_URL}/{config.env.JWKS_URL}"
 
     token = credentials.credentials
     jwk = jwt.PyJWKClient(jwk_url)
@@ -262,8 +136,8 @@ def verify_auth(
         payload = jwt.decode(
             jwt=token,
             key=signing_key,
-            algorithms=[JWT_ALGORITHM],
-            audience=[BETTER_AUTH_URL]
+            algorithms=[config.env.JWT_ALGORITHM],
+            audience=[config.env.BETTER_AUTH_URL]
         )
 
         user_id = payload.get("sub")
