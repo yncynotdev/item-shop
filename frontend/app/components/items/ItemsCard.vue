@@ -8,11 +8,12 @@ const props = defineProps<Items>();
   <UCard>
     <div class="flex flex-col gap-3">
       <img 
-        v-if="props.image"
-        :src="props.image"
+        v-if="props.image_url"
+        :src="props.image_url"
         :alt="`Image of ${props.name}`"
+        class="object-contain pixel"
       >
-      <div>
+      <div class="font-silkscreen">
         <h2>{{ props.name }}</h2>
         <p>{{ props.types }}</p>
         <p>{{ props.quantity }}</p>

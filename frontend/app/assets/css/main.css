@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@theme {
+  --font-silkscreen: "Silkscreen", monospace;
+}
+
 *,
 *::before,
 *::after {
@@ -53,4 +57,10 @@ ol {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+.pixel {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
