@@ -1,11 +1,11 @@
 from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, create_engine
-import config.env
+from app.config.env import DB_PATH
 
 
 connect_args = {"check_same_thread": False}
-engine = create_engine(config.env.DB_PATH, connect_args=connect_args)
+engine = create_engine(DB_PATH, connect_args=connect_args)
 
 
 def get_session():

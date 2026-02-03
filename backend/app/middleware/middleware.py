@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import BETTER_AUTH_URL
+from app.config.env import BETTER_AUTH_URL
 
 
 origins = [

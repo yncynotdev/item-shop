@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
-from models.item import Item
-from config.env import BUCKET_IMAGE_URL
-from database import engine
+from app.models.item import Item
+from app.config.env import BUCKET_IMAGE_URL
+from app.db.database import engine
 
 
 def seed():

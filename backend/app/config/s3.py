@@ -1,7 +1,7 @@
 import boto3
-from config import (BUCKET_ENDPOINT_URL,
-                    BUCKET_ACCESS_KEY_ID,
-                    BUCKET_SECRET_ACCESS_KEY)
+from app.config.env import (BUCKET_ENDPOINT_URL,
+                            BUCKET_ACCESS_KEY_ID,
+                            BUCKET_SECRET_ACCESS_KEY)
 
 
 s3 = boto3.client(
